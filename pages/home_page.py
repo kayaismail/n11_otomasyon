@@ -1,43 +1,70 @@
 """
-N11 Stores Page Object Model.
+N11 Home Page Object Model.
 """
-from imp import SEARCH_ERROR
 from selenium.webdriver.common.by import By
 from pages.base_page import BasePage
-import random
 import logging
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
 class HomePage(BasePage):
-    """N11 Stores page  of https://www.n11.com"""
+    """N11 Home page of https://www.n11.com"""
     
     # Private locators
-    LETTERS_CONTAINER = (By.CLASS_NAME, "letters")
-    SEARCH_BUTTON = (By.ID, "#searchData")
+    SEARCH_BOX = (By.ID, "searchData")
+    SEARCH_BUTTON = (By.CLASS_NAME, "searchBtn")
+    LOGO = (By.CLASS_NAME, "logo")
     
     HOME_URL = "https://www.n11.com"
 
     def __init__(self, driver):
-        """Initialize StoresPage."""
+        """Initialize HomePage."""
         super().__init__(driver)
+        self.logger = logging.getLogger(__name__)
         self.navigate_to(self.HOME_URL)
         self.check()
 
     def check(self):
         """Check if page is loaded correctly."""
         try:
-            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.LETTERS_CONTAINER))
-            logging.info("Letters container is visible")
+            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.LOGO))
+            self.logger.info("Home page loaded successfully")
         except TimeoutException:
-            logging.error("Timeout: Letters container not visible after 10 seconds")
+            self.logger.error("Timeout: Home page not loaded after 10 seconds")
             raise
     
-    def click_search_button(self):
-        """Click on search button."""
+    def enter_search_keyword(self, keyword: str) -> None:
+        """
+        Enters search keyword in the search box.
+        
+        Args:
+            keyword: The keyword to search for
+        """
+        self.wait.for_element_visible(self.SEARCH_BOX)
+        search_box = self.driver.find_element(*self.SEARCH_BOX)
+        search_box.clear()
+        search_box.send_keys(keyword)
+        self.logger.info(f"Entered search keyword: {keyword}")
+    
+    def click_search_button(self) -> None:
+        """Clicks the search button on the home page."""
         self.wait.for_element_clickable(self.SEARCH_BUTTON)
         self.driver.find_element(*self.SEARCH_BUTTON).click()
-
+        self.logger.info("Clicked search button")
+        self.wait.wait_for_page_load()
+    
+    def search_for_product(self, product_name: str) -> None:
+        """
+        Searches for a product.
+        
+        Args:
+            product_name: Name of the product to search for
+        """
+        self.enter_search_keyword(product_name)
+        self.click_search_button()
+        self.logger.info(f"Searched for product: {product_name}")
+        
+    
 
     

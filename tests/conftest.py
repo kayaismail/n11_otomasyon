@@ -115,6 +115,27 @@ def handle_cookie_popup(driver):
         logging.warning("Could not set cookie consent: {}".format(e))
 
 @pytest.fixture
+def home_page(driver):
+    """
+    HomePage fixture.
+    
+    Args:
+        driver: WebDriver fixture
+        
+    Returns:
+        HomePage: Initialized home page object
+    """
+    from pages.home_page import HomePage
+    
+    # Navigate to home page
+    home_page = HomePage(driver)
+    
+    # Handle cookie popup if present
+    handle_cookie_popup(driver)
+    
+    return home_page
+
+@pytest.fixture
 def stores_page(driver):
     """
     StoresPage fixture.

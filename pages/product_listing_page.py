@@ -1,5 +1,5 @@
 """
-N11 Result View Page Object Model.
+N11 Product Listing Page Object Model.
 """
 from selenium.webdriver.common.by import By
 from pages.base_page import BasePage
@@ -10,35 +10,133 @@ from selenium.common.exceptions import TimeoutException
 
 
 class ProductListingPage(BasePage):
-    """N11 Result View page for search results."""
+    """N11 Product Listing page for search results."""
 
-    # Private locators for result view page
+    # Private locators for product listing page
     ADD_TO_CART_BUTTON = (By.CSS_SELECTOR, ".btnBasket")
-
+    PRODUCT_ITEMS = (By.CSS_SELECTOR, ".productItem")
+    PRODUCT_LIST = (By.CSS_SELECTOR, ".productList")
+    SEARCH_RESULTS = (By.CSS_SELECTOR, ".searchResults")
+    ITEMS_INFO = (By.CSS_SELECTOR, ".items-info")
+    SKUS_ITEM = (By.CSS_SELECTOR, ".skus-item")
+    JS_ADD_BASKET_SKU = (By.ID, "js-addBasketSku")
 
     def __init__(self, driver):
-        """Initialize ResultViewPage."""
+        """Initialize ProductListingPage."""
         super().__init__(driver)
+        self.logger = logging.getLogger(__name__)
         # URL'e navigate etmeye gerek yok, zaten result sayfasındayız
         
         self.check()
 
     def check(self):
-        """Check if result view page is loaded correctly."""
+        """Check if product listing page is loaded correctly."""
         try:
-            # Wait for either resultView or search results to be visible
-            WebDriverWait(self.driver, 10).until(
-                EC.any_of(
-                    EC.visibility_of_element_located(self.ADD_TO_CART_BUTTON)
-                )
-            )
-            logging.info("Result view page loaded successfully")
+            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.ADD_TO_CART_BUTTON))
+            self.logger.info("Add to cart button is visible")
         except TimeoutException:
-            logging.error("Timeout: Result view page not loaded after 10 seconds")
+            self.logger.error("Timeout: add to cart button not visible after 10 seconds")
+            raise
+    
+    def is_product_added_to_cart(self) -> bool:
+        """Check if product is added to cart."""
+        try:
+            self.wait.for_element_visible(self.ITEMS_INFO, timeout=15)
+            return True
+        except TimeoutException:
+            return False
+
+    # Özel metodlar - Açıklayıcı ve güvenli
+    def click_skus_item(self, index: int = 1) -> None:
+        """Clicks on SKUS item by index."""
+        self._click_element_by_index(self.SKUS_ITEM, index, "SKUS item")
+    
+    def click_add_to_cart_button(self) -> None:
+        """Clicks on add to cart button."""
+        self._click_element(self.ADD_TO_CART_BUTTON, "add to cart button")
+    
+    # Private yardımcı metodlar - Kod tekrarını önler
+    def _click_element_by_index(self, locator: tuple, index: int, element_name: str) -> None:
+        """Generic method to click element by index."""
+        try:
+            # Tüm elementleri bul
+            elements = self.driver.find_elements(*locator)
+            
+            # Index kontrolü
+            if index < 1 or index > len(elements):
+                raise Exception(f"Index {index} out of range. Found {len(elements)} {element_name} elements")
+            
+            # İstenen index'teki elementi al (1-based index)
+            element = elements[index - 1]
+            
+            # Element'i görünür hale getir (scroll)
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
+            
+            # Kısa bir bekleme
+            import time
+            time.sleep(1)
+            
+            # Element'in tıklanabilir olmasını bekle
+            self.wait.for_element_clickable(locator, timeout=15)
+            
+            # Tıkla
+            element.click()
+            self.logger.info(f"Clicked {element_name} at index: {index} (total: {len(elements)})")
+            
+        except Exception as e:
+            self.logger.error(f"Error clicking {element_name} at index {index}: {e}")
+            raise
+    
+    def _click_element(self, locator: tuple, element_name: str) -> None:
+        """Generic method to click element."""
+        try:
+            self.wait.for_element_clickable(locator, timeout=15)
+            element = self.driver.find_element(*locator)
+            element.click()
+            self.logger.info(f"Clicked {element_name}")
+        except Exception as e:
+            self.logger.error(f"Error clicking {element_name}: {e}")
             raise
 
-    def click_add_to_cart_button(self):
-        """Click on add to cart button."""
-        self.wait.for_element_clickable(self.ADD_TO_CART_BUTTON)
-        self.driver.find_element(*self.ADD_TO_CART_BUTTON).click()
+    def get_item_count(self, locator: tuple, item_name: str = "item") -> int:
+        """
+        Gets the number of items available for any locator.
+        
+        Args:
+            locator: Tuple(By, value) - Locator to find elements
+            item_name: str - Name of the item for logging
+            
+        Returns:
+            Number of items found
+        """
+        try:
+            elements = self.driver.find_elements(*locator)
+            count = len(elements)
+            self.logger.info(f"Found {count} {item_name} elements")
+            return count
+        except Exception as e:
+            self.logger.error(f"Error getting {item_name} count: {e}")
+            return 0
+    
+    def get_skus_items_count(self) -> int:
+        """
+        Gets the number of SKUS items available.
+        
+        Returns:
+            Number of SKUS items
+        """
+        return self.get_item_count(self.SKUS_ITEM, "SKUS item")
+
+    def get_add_to_cart_button_count(self) -> int:
+        """
+        Gets the number of add to cart buttons available.
+        
+        Returns:
+            Number of add to cart buttons
+        """
+        return self.get_item_count(self.ADD_TO_CART_BUTTON, "add to cart button")
+    
+    def click_js_add_basket_sku(self) -> None:
+        """Clicks on JS add basket sku."""
+        self._click_element(self.JS_ADD_BASKET_SKU, "JS add basket sku")
 

@@ -1,51 +1,77 @@
 """
-Test cases for N11 Stores functionality.
+Test cases for N11 Search functionality.
 """
 import pytest
-from pages import home_page
-from pages.stores_page import StoresPage
-import logging
-from pages.product_listing_page import ProductListingPage
 from pages.home_page import HomePage
+from pages.product_listing_page import ProductListingPage
+import logging
 
 class TestSearch:
-    """Test class for N11 stores functionality."""
+    """Test class for N11 search functionality."""
 
     def test_search_and_add_to_cart(self, home_page):
         """
-        Test: Filter stores by letter 'S' and click on a random store.
+        Test: Search for a product and add to cart.
 
         Steps:
-        1. Filter stores by letter 'S'
-        2. Click on a random store
+        1. Search for a product
+        2. Add product to cart
         """
         # Arrange
-        logging.info("Starting test: Filter and click random store")
+        logger = logging.getLogger(__name__)
+        logger.info("Starting test: Search and add to cart")
 
-        # Act - Step 1: Filter stores by letter 'S'
-        home_page.click_search_button()
+        # Act - Step 1: Search for product
         home_page.search_for_product("iphone")
-        
+        logger.info("Successfully searched for 'iphone'")
+
+        # Act - Step 2: Navigate to product listing page
         product_listing_page = ProductListingPage(home_page.driver)
+        
+        # Act - Step 3: Add product to cart
         product_listing_page.click_add_to_cart_button()
-        logging.info("Successfully filtered stores by letter 'S'")
+        logger.info("Successfully added product to cart")
+        
+        # Act - Step 4: Select first SKUS item (daha güvenli)
+        product_listing_page.click_skus_item(1)
+        logger.info("Clicked first SKUS item")
+        
+        # Act - Step 5: Get SKUS items count for verification
+        skus_items_count: int = product_listing_page.get_skus_items_count()
+        product_listing_page.click_skus_item(skus_items_count)
+        logger.info(f"Found {skus_items_count} SKUS items")
+        
+        # Act - Step 6: Click JS add basket sku
+        product_listing_page.click_js_add_basket_sku()
+        logger.info("Clicked JS add basket sku")
+        
+        # Assert - Verify product was added to cart
+        is_added = product_listing_page.is_product_added_to_cart()
+        assert is_added, "Product should be added to cart"
+        logger.info("Test completed successfully")
 
-        # Assert - Verify stores are available after filtering
-        store_count = stores_page.get_store_count()
-        assert store_count > 0, "Should find stores after filtering by 'S'"
-        logging.info("Found {} stores after filtering".format(store_count))
+        add_to_cart_button_count: int = product_listing_page.get_add_to_cart_button_count()
+        logger.info(f"Found {add_to_cart_button_count} add to cart buttons")
 
-        # Act - Step 2: Get random index and click
-        random_index = stores_page.get_random_store_index()
-        assert 1 <= random_index <= store_count, "Random index should be within valid range"
-        logging.info("Generated random index: {} (valid range: 1-{})".format(random_index, store_count))
-
-        # Act - Step 3: Click on the random store and get result view page
-        result_view_page = stores_page.click_store_by_index(random_index)
-
-        # Act - Step 4: Verify result view page
-        result_view_page.wait_for_store_page_load()
-        result_view_page.verify_result_view_element()
-
-        # Assert - Test completed successfully
-        logging.info("Successfully clicked on store at index: {}".format(random_index))
+         # Act - Step 3: Add product to cart
+        product_listing_page.click_add_to_cart_button(add_to_cart_button_count)
+        logger.info("Successfully added product to cart")
+        
+        # Act - Step 4: Select first SKUS item (daha güvenli)
+        product_listing_page.click_skus_item(1)
+        logger.info("Clicked first SKUS item")
+        
+        # Act - Step 5: Get SKUS items count for verification
+        skus_items_count: int = product_listing_page.get_skus_items_count()
+        product_listing_page.click_skus_item(skus_items_count)
+        logger.info(f"Found {skus_items_count} SKUS items")
+        
+        # Act - Step 6: Click JS add basket sku
+        product_listing_page.click_js_add_basket_sku()
+        logger.info("Clicked JS add basket sku")
+        
+        # Assert - Verify product was added to cart
+        is_added = product_listing_page.is_product_added_to_cart()
+        assert is_added, "Product should be added to cart"
+        logger.info("Test completed successfully") 
+        
