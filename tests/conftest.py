@@ -108,7 +108,6 @@ def handle_cookie_popup(driver):
         from utils.wait_helper import WaitHelper
         wait_helper = WaitHelper(driver)
         wait_helper.wait_for_page_load(timeout=15)
-        wait_helper.wait_for_network_idle(timeout=10)
         
         logging.info("Page refreshed and loaded with cookie consent")
         

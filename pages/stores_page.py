@@ -20,6 +20,7 @@ class StoresPage(BasePage):
     
     def __init__(self, driver):
         super().__init__(driver)
+        self.logger = logging.getLogger(__name__)  # Modül bazlı logger
         self.navigate_to(self.STORES_URL)  # Generic method kullan
         self.check()
 
@@ -27,9 +28,9 @@ class StoresPage(BasePage):
         """Check if page is loaded correctly."""
         try:
             WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.LETTERS_CONTAINER))
-            logging.info("Letters container is visible")
+            self.logger.info("Letters container is visible")
         except TimeoutException:
-            logging.error("Timeout: Letters container not visible after 10 seconds")
+            self.logger.error("Timeout: Letters container not visible after 10 seconds")
             raise
 
     def click_letter(self, letter: str) -> None:
@@ -49,7 +50,7 @@ class StoresPage(BasePage):
         
         # Wait for page to load using WaitHelper
         self.wait.wait_for_page_load()
-        logging.info("Filtered stores by letter: {}".format(letter))
+        self.logger.info("Filtered stores by letter: {}".format(letter))
 
     def get_store_count(self) -> int:
         """
@@ -60,7 +61,9 @@ class StoresPage(BasePage):
         """
         store_list_locator = "div.tabPanel.allSellers > div.sellerListHolder > ul > li"
         stores = self.driver.find_elements(By.CSS_SELECTOR, store_list_locator)
-        return len(stores)
+        count = len(stores)
+        self.logger.info(f"Found {count} stores in the list")
+        return count
     
     def get_random_store_index(self) -> int:
         """
@@ -73,7 +76,9 @@ class StoresPage(BasePage):
         if store_count == 0:
             raise Exception("No stores found in the list")
         
-        return random.randint(1, store_count)
+        random_index = random.randint(1, store_count)
+        self.logger.info(f"Generated random store index: {random_index} (total stores: {store_count})")
+        return random_index
     
     def click_store_by_index(self, index: int):
         """
@@ -90,7 +95,7 @@ class StoresPage(BasePage):
         element = self.driver.find_element(*store_link_locator)
         element.click()
 
-        logging.info("Clicked on store at index: {}".format(index))
+        self.logger.info("Clicked on store at index: {}".format(index))
         from pages.search_result_page import ResultViewPage
         return ResultViewPage(self.driver)
     
@@ -113,7 +118,7 @@ class StoresPage(BasePage):
         # Step 3: Click on random store
         self.click_store_by_index(random_index)
         
-        logging.info("Filtered by '{}' and clicked store at index: {}".format(letter, random_index))
+        self.logger.info("Filtered by '{}' and clicked store at index: {}".format(letter, random_index))
         return random_index
-
+    
     
