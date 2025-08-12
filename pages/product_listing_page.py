@@ -51,9 +51,46 @@ class ProductListingPage(BasePage):
         """Clicks on SKUS item by index."""
         self._click_element_by_index(self.SKUS_ITEM, index, "SKUS item")
     
-    def click_add_to_cart_button(self) -> None:
-        """Clicks on add to cart button."""
-        self._click_element(self.ADD_TO_CART_BUTTON, "add to cart button")
+    def click_add_to_cart_button(self, index: int = 1) -> None:
+        """
+        Clicks on add to cart button by index.
+        
+        Args:
+            index: Index of add to cart button to click (1-based, default: 1)
+        """
+        try:
+            # Tüm add to cart buttonları bul
+            elements = self.driver.find_elements(*self.ADD_TO_CART_BUTTON)
+            self.logger.info(f"Found {len(elements)} add to cart buttons")
+            
+            # Index kontrolü
+            if index < 1 or index > len(elements):
+                raise Exception(f"Index {index} out of range. Found {len(elements)} add to cart buttons")
+            
+            # İstenen index'teki elementi al (1-based index)
+            target_element = elements[index - 1]
+            
+            # Element'i görünür hale getir
+            self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", target_element)
+            
+            # Kısa bekleme
+            import time
+            time.sleep(1)
+            
+            # Element'in tıklanabilir olmasını bekle
+            from selenium.webdriver.support import expected_conditions as EC
+            from selenium.webdriver.support.ui import WebDriverWait
+            
+            # Element'in kendisinin tıklanabilir olmasını bekle
+            WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(target_element))
+            
+            # Tıkla
+            target_element.click()
+            self.logger.info(f"Clicked add to cart button at index: {index} (total: {len(elements)})")
+            
+        except Exception as e:
+            self.logger.error(f"Error clicking add to cart button at index {index}: {e}")
+            raise
     
     # Private yardımcı metodlar - Kod tekrarını önler
     def _click_element_by_index(self, locator: tuple, index: int, element_name: str) -> None:
@@ -139,4 +176,19 @@ class ProductListingPage(BasePage):
     def click_js_add_basket_sku(self) -> None:
         """Clicks on JS add basket sku."""
         self._click_element(self.JS_ADD_BASKET_SKU, "JS add basket sku")
-
+    
+    def has_skus_items(self) -> bool:
+        """
+        Check if product has SKU variants.
+        
+        Returns:
+            True if SKU items exist, False otherwise
+        """
+        try:
+            skus_count = self.get_skus_items_count()
+            has_skus = skus_count > 0
+            self.logger.info(f"Product has SKUs: {has_skus} (count: {skus_count})")
+            return has_skus
+        except Exception as e:
+            self.logger.error(f"Error checking SKUs existence: {e}")
+            return False
