@@ -63,7 +63,7 @@ class StoresPage(BasePage):
         self.logger.info(f"Found {count} stores in the list")
         return count
     
-    def get_random_store_index(self) -> int:
+    def generate_random_store_index(self) -> int:
         """
         Generates a random store index.
         
@@ -92,9 +92,21 @@ class StoresPage(BasePage):
         self.click(store_link_locator)
 
         self.logger.info("Clicked on store at index: {}".format(index))
-        from pages.search_result_page import ResultViewPage
-        return ResultViewPage(self.driver)
-    
+        from pages.search_result_page import SearchResultPage
+        return SearchResultPage(self.driver)
+
+    def get_random_store_name(self, index: int) -> str:
+        """
+        Gets a random store name.
+        
+        Returns:
+            Random store name
+        """
+        store_link_locator = (By.CSS_SELECTOR, "div.tabPanel.allSellers > div.sellerListHolder > ul > li:nth-child({}) a".format(index))
+        store_name = self.driver.find_element(*store_link_locator).text.lower()
+        self.logger.info(f"Found store name: {store_name} at index: {index}")
+        return store_name
+
     def filter_and_click_random_store(self, letter: str) -> int:
         """
         Filters stores by letter and clicks on a random one.
@@ -109,7 +121,7 @@ class StoresPage(BasePage):
         self.click_letter(letter)
         
         # Step 2: Get random index
-        random_index = self.get_random_store_index()
+        random_index = self.generate_random_store_index()
         
         # Step 3: Click on random store
         self.click_store_by_index(random_index)

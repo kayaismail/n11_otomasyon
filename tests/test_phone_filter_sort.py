@@ -3,7 +3,7 @@ Test cases for N11 Phone search with filtering and sorting functionality.
 """
 import pytest
 from pages.home_page import HomePage
-from pages.product_listing_page import ProductListingPage
+from pages.search_result_page import SearchResultPage
 import logging
 
 
@@ -31,7 +31,7 @@ class TestPhoneFilterSort:
 
         # Act - Step 2: Navigate to product listing page
         logger.info("📋 STEP 2: Navigating to product listing page")
-        product_listing_page = ProductListingPage(home_page.driver)
+        product_listing_page = SearchResultPage(home_page.driver)
         logger.info("✅ SUCCESS: Product listing page loaded successfully")
         
         # Act - Step 3: Select second brand filter

@@ -3,7 +3,7 @@ Test cases for N11 Search functionality.
 """
 import pytest
 from pages.home_page import HomePage
-from pages.product_listing_page import ProductListingPage
+from pages.search_result_page import SearchResultPage
 import logging
 
 class TestSearch:
@@ -71,7 +71,7 @@ class TestSearch:
 
         # Act - Step 2: Navigate to product listing page
         logger.info("📋 STEP 2: Navigating to product listing page")
-        product_listing_page = ProductListingPage(home_page.driver)
+        product_listing_page = SearchResultPage(home_page.driver)
         logger.info("✅ SUCCESS: Product listing page loaded successfully")
         
         # Act - Step 3: Add first product to cart
@@ -90,6 +90,17 @@ class TestSearch:
             logger.info("✅ SUCCESS: Last product added to cart successfully")
         else:
             logger.info("⚠️ STEP 5: Only one cart button found, skipping second addition")
+
+        # Act - Step 6: Click basket icon
+        logger.info("🛒 STEP 6: Clicking basket icon")
+        product_listing_page.click_basket_icon()
+        logger.info("✅ SUCCESS: Basket icon clicked")
+
+        # Act - Step 7: Set prod detail count
+        logger.info("🔢 STEP 7: Setting prod detail count")
+        prod_detail_count = product_listing_page.get_prod_detail_count()
+        assert prod_detail_count == 2, "Prod detail count should be 2"
+        logger.info(f"✅ SUCCESS: Prod detail count is {prod_detail_count}")
         
 
         logger.info("🎉 TEST COMPLETED SUCCESSFULLY: Search and Add to Cart")

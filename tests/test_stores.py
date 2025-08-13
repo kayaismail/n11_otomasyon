@@ -35,25 +35,32 @@ class TestStores:
 
         # Act - Step 3: Get random index and click
         logger.info("🎲 STEP 3: Generating random store index for selection")
-        random_index = stores_page.get_random_store_index()
+        random_index = stores_page.generate_random_store_index()
         assert 1 <= random_index <= store_count, "Random index should be within valid range"
         logger.info(f"✅ SUCCESS: Generated random index: {random_index} (valid range: 1-{store_count})")
 
         # Act - Step 4: Click on the random store and get result view page
         logger.info(f"🏪 STEP 4: Clicking on store at index {random_index}")
+        random_store_name = stores_page.get_random_store_name(random_index)
         result_view_page = stores_page.click_store_by_index(random_index)
         logger.info(f"✅ SUCCESS: Successfully clicked on store at index: {random_index}")
 
         # Act - Step 5: Verify result view page
         logger.info("📋 STEP 5: Waiting for store page to load completely")
         result_view_page.wait_for_store_page_load()
+        
         logger.info("✅ SUCCESS: Store page loaded successfully")
         
         # Verify result view elements are present
         logger.info("🔍 STEP 6: Verifying that result view elements are present and visible")
         is_result_visible = result_view_page.verify_result_view_element()
+        result_text = result_view_page.get_result_text()
+        
+        # Case-insensitive comparison for store name
+        assert random_store_name.lower() in result_text.lower(), f"Random store name '{random_store_name}' should be in result text '{result_text}'"
         assert is_result_visible, "Result view elements should be visible after clicking store"
         logger.info("✅ SUCCESS: Result view elements are present and visible")
+        logger.info(f"✅ SUCCESS: Store name '{random_store_name}' found in result text")
 
         # Assert - Test completed successfully
 
