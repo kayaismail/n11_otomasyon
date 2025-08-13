@@ -79,15 +79,71 @@ pytest tests/test_stores.py
 pytest -v -s
 ```
 
-### HTML raporu oluşturun:
+## 📊 Modern HTML Rapor Sistemi
+
+Bu proje, kullanıcı dostu ve görsel açıdan zengin HTML test raporları oluşturur.
+
+### ✨ Rapor Özellikleri
+- **🎨 Modern UI**: Gradient tasarım ve responsive layout
+- **📸 Otomatik Screenshot**: Başarısız testler için otomatik ekran görüntüsü
+- **🏷️ Test Tipleri**: Smoke, Regression, Functional test kategorizasyonu
+- **⏱️ Timing Bilgisi**: Her test için detaylı süre analizi
+- **📈 İstatistikler**: Özet kartlar ve progress bar
+- **🔍 Detaylı Loglar**: Expandable log sections
+
+### 🚀 Rapor Oluşturma
+
+#### Tüm Testler
 ```bash
-pytest --html=reports/report.html
+# Otomatik rapor oluşturma (pytest.ini ile)
+pytest
+
+# Manuel rapor oluşturma (CSS ile)
+pytest --html=reports/test_report.html --self-contained-html --css=reports/custom_style.css
+
+# Spesifik test çalıştırma
+pytest tests/test_phone_filter_sort.py -v
 ```
 
-## 📊 Test Raporları
-- HTML raporları `reports/` dizininde oluşturulur
-- Hata durumunda ekran görüntüleri `screenshots/` dizininde saklanır
-- JSON raporları CI/CD entegrasyonu için kullanılabilir
+#### Test Tipine Göre Filtreleme
+```bash
+# Sadece smoke testleri
+pytest -m smoke
+
+# Sadece regression testleri
+pytest -m regression
+
+# Hızlı testler (slow hariç)
+pytest -m "not slow"
+```
+
+### 📁 Rapor Dosyaları
+- **Canlı Rapor**: `reports/live_report.html` - Test çalıştıkça otomatik güncellenir
+- **Basit Rapor**: `reports/simple_report.html` - Demo rapor
+- **CSS stilleri**: Modern tasarım için custom_style.css
+
+### 🎯 Basit ve Etkili Rapor Sistemi
+Bu proje, **her test çalıştığında otomatik güncellenen** canlı HTML raporu oluşturur:
+
+#### ✅ **Çalışan Özellikler:**
+- ✅ Test adı ve durumu (PASS/FAIL)
+- ✅ Test süresi (saniye cinsinden)
+- ✅ Çalıştırma zamanı
+- ✅ Otomatik özet istatistikleri
+- ✅ Modern gradient tasarım
+- ✅ Her test sonunda otomatik güncelleme
+
+#### 📊 **Rapor İçeriği:**
+```
+🛒 N11 Test Raporu
+📅 2025-08-13 11:43:45
+
+Toplam Test: 2    ✅ Başarılı: 2    ❌ Başarısız: 0
+
+Test Adı                              | Durum      | Süre   | Zaman
+test_phone_search_filter             | ✅ PASS    | 4.76s  | 11:43:37
+test_filter_and_click_random_store   | ✅ PASS    | 2.62s  | 11:43:45
+```
 
 ## 🏷️ Test Kategorileri
 - **Smoke Tests**: Kritik fonksiyonalite testleri

@@ -8,12 +8,17 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import logging
 from datetime import datetime
+import time
+from simple_report import SimpleReporter
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
+# Global reporter instance (reset at session start)
+reporter = None
 
 @pytest.fixture(scope="function")
 def driver():
@@ -155,20 +160,68 @@ def stores_page(driver):
     
     return stores_page
 
-# Pytest hooks for HTML reporting
+# Pytest hooks for simple reporting
 def pytest_configure(config):
     """Configure custom markers."""
     config.addinivalue_line("markers", "smoke: smoke tests")
     config.addinivalue_line("markers", "regression: regression tests")
     config.addinivalue_line("markers", "slow: slow running tests")
 
-def pytest_html_report_title(report):
-    """Customize HTML report title."""
-    report.title = "N11 Automation Test Report"
+def pytest_sessionstart(session):
+    """Initialize reporter at session start."""
+    global reporter
+    # Eğer reporter zaten varsa eski testleri koru, yoksa yeni oluştur
+    if reporter is None:
+        reporter = SimpleReporter()
+        logging.info("🆕 Simple reporter initialized")
+    else:
+        logging.info("📄 Existing reporter found, keeping previous test results")
 
-def pytest_html_results_summary(prefix, summary, postfix):
-    """Add custom summary to HTML report."""
-    prefix.extend([
-        f"<p><strong>Test Date:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>",
-        f"<p><strong>Project:</strong> N11 E-commerce Automation</p>"
-    ])
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Hook to capture test results for simple report."""
+    outcome = yield
+    report = outcome.get_result()
+    
+    # Only capture call phase results (actual test execution)
+    if report.when == "call":
+        test_name = item.name
+        status = "PASS" if report.passed else "FAIL"
+        duration = report.duration if hasattr(report, 'duration') else 0
+        error_msg = ""
+        logs = ""
+        
+        if report.failed and hasattr(report, 'longrepr'):
+            # Extract error message
+            try:
+                error_msg = str(report.longrepr).split('\n')[-2] if report.longrepr else ""
+            except:
+                error_msg = "Test failed"
+        
+        # Capture logs from report sections (captured stdout/stderr)
+        try:
+            if hasattr(report, 'sections') and report.sections:
+                log_sections = []
+                for section_name, section_content in report.sections:
+                    if any(keyword in section_name.lower() for keyword in ['log', 'stderr', 'stdout']):
+                        log_sections.append(f"--- {section_name} ---\n{section_content}")
+                if log_sections:
+                    logs = "\n\n".join(log_sections)
+                else:
+                    logs = "Log sections bulunamadı"
+            else:
+                logs = "Report sections mevcut değil"
+        except Exception as e:
+            logs = f"Log bilgisi alınamadı: {str(e)}"
+        
+        # Add to reporter
+        reporter.add_result(test_name, status, duration, error_msg, logs)
+        logging.info(f"📝 Captured test result: {test_name} = {status}")
+
+def pytest_sessionfinish(session, exitstatus):
+    """Generate simple HTML report when session finishes."""
+    try:
+        output_path = reporter.generate_html("reports/live_report.html")
+        print(f"\n🎉 Live HTML Report: file://{output_path}")
+    except Exception as e:
+        logging.error(f"Failed to generate simple report: {e}")

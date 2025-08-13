@@ -9,6 +9,7 @@ from selenium.common.exceptions import TimeoutException
 class TestStores:
     """Test class for N11 stores functionality."""
 
+    @pytest.mark.regression
     def test_filter_and_click_random_store(self, stores_page):
         """
         Test case is: Filter stores by letter 'S' and click on a random store.

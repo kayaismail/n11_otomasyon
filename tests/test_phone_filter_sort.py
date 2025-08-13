@@ -10,6 +10,7 @@ import logging
 class TestPhoneFilterSort:
     """Test class for phone search with filtering and sorting."""
 
+    @pytest.mark.smoke
     def test_phone_search_filter(self, home_page):
         """
         Test: Phone search with brand filtering, comment sorting and rating order verification.

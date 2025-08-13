@@ -66,35 +66,35 @@ class SearchResultPage(BasePage):
         except TimeoutException:
             logging.error("Timeout: URL does not contain 'arama?s=' after 10 seconds")
             raise
-
+    
     def verify_result_view_element(self):
         """
         Verifies that .resultView element is present and visible on the page.
-
+        
         Returns:
             True if element is found and visible, False otherwise
         """
         try:
             # Wait for .resultView element to be visible
             self.wait.for_element_visible(self.RESULT_VIEW, timeout=10)
-
+            
             # Additional check to ensure element is displayed
             result_view_element = self.driver.find_element(*self.RESULT_VIEW)
-
+            
             if result_view_element.is_displayed():
                 logging.info(".resultView element is present and visible")
                 return True
             else:
                 logging.warning(".resultView element found but not visible")
                 return False
-
+                
         except Exception as e:
             logging.error(".resultView element not found or not visible: {}".format(e))
-
+            
             # Log current URL for debugging
             current_url = self.driver.current_url
             logging.info("Current URL: {}".format(current_url))
-
+            
             # Try to find alternative elements
             try:
                 search_results = self.driver.find_element(*self.SEARCH_RESULTS)
@@ -103,7 +103,7 @@ class SearchResultPage(BasePage):
                     return True
             except:
                 pass
-
+            
             return False
 
     def get_result_text(self) -> str:
