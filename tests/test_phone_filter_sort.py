@@ -10,15 +10,16 @@ import logging
 class TestPhoneFilterSort:
     """Test class for phone search with filtering and sorting."""
 
-    def test_phone_search_filter_sort_free_shipping(self, home_page):
+    def test_phone_search_filter(self, home_page):
         """
-        Test: Phone search with brand filtering, comment sorting and free shipping listing.
+        Test: Phone search with brand filtering, comment sorting and rating order verification.
 
         Steps:
         1. Search for "telefon" keyword
         2. Select second brand filter
-        3. Sort by comment count
-        4. List products with free shipping
+        3. Sort by comment count (rating)
+        4. Verify first 5 products are sorted by rating (descending)
+        5. List products with free shipping
         """
         # Arrange
         logger = logging.getLogger(__name__)
@@ -48,20 +49,28 @@ class TestPhoneFilterSort:
         product_listing_page.click_sort_option(4)
         logger.info("✅ SUCCESS: Products sorted by comment count successfully")
         
-        # Act - Step 5: Filter by free shipping
-        logger.info("🚚 STEP 5: Opening cargo filter to find free shipping products")
+        # Act - Step 5: Verify rating sort order (descending)
+        logger.info("🔍 STEP 5: Verifying that products are sorted by rating (descending order)")
+        is_sorted_correctly = product_listing_page.verify_rating_sort_descending(5)
+        assert is_sorted_correctly, "Products should be sorted by rating in descending order"
+        logger.info("✅ SUCCESS: Rating sort order verified - products sorted correctly")
+        
+        # Act - Step 6: Filter by free shipping
+        logger.info("🚚 STEP 6: Opening cargo filter to find free shipping products")
         product_listing_page.click_cargo_filter()
         logger.info("✅ SUCCESS: Cargo filter opened successfully")
         
-        logger.info("📦 STEP 5.1: Selecting 'Free Shipment' option")
+        logger.info("📦 STEP 6.1: Selecting 'Free Shipment' option")
         product_listing_page.click_free_shipment_option()
         logger.info("✅ SUCCESS: Free shipment filter applied successfully")
         
-        # Assert - Verify that products were found
-  
+        # Assert - Verify final results
+        logger.info("📊 STEP 7: Final verification - checking that filtered results are present")
         
-        # Log free shipping products
-
+        # Verify cargo badge fields exist for all products
+        logger.info("🚚 STEP 7.1: Verifying that all products have cargo badge information")
+        all_have_cargo_badges = product_listing_page.verify_cargo_badge_field_all_products()
+        assert all_have_cargo_badges == True, "All products should have cargo badge information"
+        logger.info(f"✅ SUCCESS: Cargo badge verification completed - All products have badges: {all_have_cargo_badges}")
         
-        logger.info("=" * 80)
-        logger.info("🎉 TEST COMPLETED SUCCESSFULLY: Phone Search with Filtering and Sorting")
+        logger.info("🎉 TEST COMPLETED SUCCESSFULLY: Phone Search with Rating Sort Verification")

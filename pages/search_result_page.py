@@ -22,7 +22,9 @@ class SearchResultPage(BasePage):
     _JS_ADD_BASKET_SKU = (By.ID, "js-addBasketSku")
     _BASKET_ICON = (By.CSS_SELECTOR, ".basket-icon")
     _PROD_DETAIL = (By.CSS_SELECTOR, ".prodDetail")
-    
+    _RATING_TEXT = (By.CSS_SELECTOR, ".ratingCont > .ratingText")
+    _CARGO_BADGE_FIELD = (By.CSS_SELECTOR, ".cargoBadgeField")
+    _IMG_HOLDER = (By.CSS_SELECTOR, ".imgHolder")
     
     # Filter and sort locators
     _ICON_SORT_BY = (By.CSS_SELECTOR, ".iconSortBy")
@@ -301,3 +303,93 @@ class SearchResultPage(BasePage):
         prod_detail_count = self.get_item_count(self._PROD_DETAIL, "prod detail")
         self.logger.info(f"Found {prod_detail_count} prod detail elements")
         return prod_detail_count
+    
+    def get_rating_text_by_index(self, index: int) -> str:
+        """Gets the rating text by index with only numbers extracted."""
+        import re
+        try:
+            rating_elements = self.driver.find_elements(*self._RATING_TEXT)
+            if index < 1 or index > len(rating_elements):
+                self.logger.error(f"Index {index} out of range. Found {len(rating_elements)} rating elements")
+                return "0"
+            
+            rating_element = rating_elements[index - 1]  # 1-based index
+            rating_text = rating_element.text
+            cleaned = re.sub(r"[^\d]", "", rating_text)
+            self.logger.info(f"Rating at index {index}: {rating_text}, cleaned: {cleaned}")
+            return cleaned
+        except Exception as e:
+            self.logger.error(f"Error getting rating at index {index}: {e}")
+            return "0"
+
+    def verify_rating_sort_descending(self, count: int = 5) -> bool:
+        """
+        Verifies that ratings are sorted in descending order (biggest to smallest).
+        
+        Args:
+            count: Number of ratings to check (default: 5)
+            
+        Returns:
+            True if ratings are sorted descending, False otherwise
+        """
+        try:
+            ratings = []
+            for i in range(1, count + 1):
+                rating_str = self.get_rating_text_by_index(i)
+                rating_num = int(rating_str) if rating_str.isdigit() else 0
+                ratings.append(rating_num)
+            
+            self.logger.info(f"Found ratings: {ratings}")
+            
+            # Check if list is sorted in descending order
+            is_sorted_desc = all(ratings[i] >= ratings[i + 1] for i in range(len(ratings) - 1))
+            
+            if is_sorted_desc:
+                self.logger.info(f"✅ Ratings are correctly sorted descending: {ratings}")
+            else:
+                self.logger.error(f"❌ Ratings are NOT sorted descending: {ratings}")
+                
+            return is_sorted_desc
+            
+        except Exception as e:
+            self.logger.error(f"Error verifying rating sort: {e}")
+            return False
+
+    def verify_cargo_badge_field_all_products(self) -> bool:
+        """Verifies that cargo badge field exists in all product imgHolder sections."""
+        try:
+            # imgHolder elementlerini bul
+            img_holder_elements = self.driver.find_elements(*self._IMG_HOLDER)
+            self.logger.info(f"Found {len(img_holder_elements)} imgHolder elements")
+            
+            products_with_cargo = 0
+            products_without_cargo = 0
+            
+            for i, img_holder in enumerate(img_holder_elements, 1):
+                try:
+                    # Her imgHolder içinde cargoBadgeField var mı kontrol et
+                    cargo_badge = img_holder.find_element(By.CSS_SELECTOR, ".cargoBadgeField")
+                    if cargo_badge.is_displayed():
+                        cargo_text = cargo_badge.find_element(By.CSS_SELECTOR, ".cargoBadgeText").text
+                        self.logger.info(f"✅ Product {i}: Has cargo badge - '{cargo_text}'")
+                        products_with_cargo += 1
+                    else:
+                        self.logger.warning(f"⚠️ Product {i}: Cargo badge exists but not visible")
+                        products_without_cargo += 1
+                except:
+                    self.logger.warning(f"❌ Product {i}: No cargo badge found")
+                    products_without_cargo += 1
+            
+            total_products = len(img_holder_elements)
+            self.logger.info(f"📊 SUMMARY: {products_with_cargo}/{total_products} products have cargo badges")
+            
+            if products_with_cargo == total_products:
+                self.logger.info("✅ ALL products have cargo badge field")
+                return True
+            else:
+                self.logger.info(f"⚠️ {products_without_cargo} products don't have cargo badge")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Error verifying cargo badge fields: {e}")
+            return False
