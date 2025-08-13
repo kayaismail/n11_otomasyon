@@ -43,10 +43,8 @@ class StoresPage(BasePage):
         # Click on the letter filter within letters container
         letter_locator = (By.CSS_SELECTOR, '.letters span[data-has-seller="{}"]'.format(letter))
         
-        # Use default Selenium click with explicit wait
-        self.wait.for_element_clickable(letter_locator)
-        element = self.driver.find_element(*letter_locator)
-        element.click()
+        # Use BasePage click method
+        self.click(letter_locator)
         
         # Wait for page to load using WaitHelper
         self.wait.wait_for_page_load()
@@ -90,10 +88,8 @@ class StoresPage(BasePage):
         # Try to find the store link directly
         store_link_locator = (By.CSS_SELECTOR, "div.tabPanel.allSellers > div.sellerListHolder > ul > li:nth-child({}) a".format(index))
 
-        # Use default Selenium click with explicit wait
-        self.wait.for_element_clickable(store_link_locator)
-        element = self.driver.find_element(*store_link_locator)
-        element.click()
+        # Use BasePage click method
+        self.click(store_link_locator)
 
         self.logger.info("Clicked on store at index: {}".format(index))
         from pages.search_result_page import ResultViewPage

@@ -13,13 +13,20 @@ class ProductListingPage(BasePage):
     """N11 Product Listing page for search results."""
 
     # Private locators for product listing page
-    ADD_TO_CART_BUTTON = (By.CSS_SELECTOR, ".btnBasket")
-    PRODUCT_ITEMS = (By.CSS_SELECTOR, ".productItem")
-    PRODUCT_LIST = (By.CSS_SELECTOR, ".productList")
-    SEARCH_RESULTS = (By.CSS_SELECTOR, ".searchResults")
-    ITEMS_INFO = (By.CSS_SELECTOR, ".items-info")
-    SKUS_ITEM = (By.CSS_SELECTOR, ".skus-item")
-    JS_ADD_BASKET_SKU = (By.ID, "js-addBasketSku")
+    _ADD_TO_CART_BUTTON = (By.CSS_SELECTOR, ".btnBasket")
+    _PRODUCT_ITEMS = (By.CSS_SELECTOR, ".productItem")
+    _PRODUCT_LIST = (By.CSS_SELECTOR, ".productList")
+    _SEARCH_RESULTS = (By.CSS_SELECTOR, ".searchResults")
+    _ITEMS_INFO = (By.CSS_SELECTOR, ".items-info")
+    _SKUS_ITEM = (By.CSS_SELECTOR, ".skus-item")
+    _JS_ADD_BASKET_SKU = (By.ID, "js-addBasketSku")
+    
+    
+    # Filter and sort locators
+    _ICON_SORT_BY = (By.CSS_SELECTOR, ".iconSortBy")
+    _ITEM_I4 = (By.CSS_SELECTOR, ".item.i4")
+    _CARGO_FILTER = (By.CSS_SELECTOR, ".filter.cargoFilter.acc")
+    _FREE_SHIPMENT_OPTION = (By.ID, "freeShipmentOption")
 
     def __init__(self, driver):
         """Initialize ProductListingPage."""
@@ -32,7 +39,7 @@ class ProductListingPage(BasePage):
     def check(self):
         """Check if product listing page is loaded correctly."""
         try:
-            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.ADD_TO_CART_BUTTON))
+            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self._ADD_TO_CART_BUTTON))
             self.logger.info("Add to cart button is visible")
         except TimeoutException:
             self.logger.error("Timeout: add to cart button not visible after 10 seconds")
@@ -41,7 +48,7 @@ class ProductListingPage(BasePage):
     def is_product_added_to_cart(self) -> bool:
         """Check if product is added to cart."""
         try:
-            self.wait.for_element_visible(self.ITEMS_INFO, timeout=15)
+            self.wait.for_element_visible(self._ITEMS_INFO, timeout=15)
             return True
         except TimeoutException:
             return False
@@ -49,7 +56,7 @@ class ProductListingPage(BasePage):
     # Özel metodlar - Açıklayıcı ve güvenli
     def click_skus_item(self, index: int = 1) -> None:
         """Clicks on SKUS item by index."""
-        self._click_element_by_index(self.SKUS_ITEM, index, "SKUS item")
+        self._click_element_by_index(self._SKUS_ITEM, index, "SKUS item")
     
     def click_add_to_cart_button(self, index: int = 1) -> None:
         """
@@ -60,7 +67,7 @@ class ProductListingPage(BasePage):
         """
         try:
             # Tüm add to cart buttonları bul
-            elements = self.driver.find_elements(*self.ADD_TO_CART_BUTTON)
+            elements = self.driver.find_elements(*self._ADD_TO_CART_BUTTON)
             self.logger.info(f"Found {len(elements)} add to cart buttons")
             
             # Index kontrolü
@@ -125,15 +132,8 @@ class ProductListingPage(BasePage):
             raise
     
     def _click_element(self, locator: tuple, element_name: str) -> None:
-        """Generic method to click element."""
-        try:
-            self.wait.for_element_clickable(locator, timeout=15)
-            element = self.driver.find_element(*locator)
-            element.click()
-            self.logger.info(f"Clicked {element_name}")
-        except Exception as e:
-            self.logger.error(f"Error clicking {element_name}: {e}")
-            raise
+        """Generic method to click element using BasePage method."""
+        self.click(locator)
 
     def get_item_count(self, locator: tuple, item_name: str = "item") -> int:
         """
@@ -162,7 +162,7 @@ class ProductListingPage(BasePage):
         Returns:
             Number of SKUS items
         """
-        return self.get_item_count(self.SKUS_ITEM, "SKUS item")
+        return self.get_item_count(self._SKUS_ITEM, "SKUS item")
 
     def get_add_to_cart_button_count(self) -> int:
         """
@@ -171,11 +171,11 @@ class ProductListingPage(BasePage):
         Returns:
             Number of add to cart buttons
         """
-        return self.get_item_count(self.ADD_TO_CART_BUTTON, "add to cart button")
+        return self.get_item_count(self._ADD_TO_CART_BUTTON, "add to cart button")
     
     def click_js_add_basket_sku(self) -> None:
         """Clicks on JS add basket sku."""
-        self._click_element(self.JS_ADD_BASKET_SKU, "JS add basket sku")
+        self._click_element(self._JS_ADD_BASKET_SKU, "JS add basket sku")
     
     def has_skus_items(self) -> bool:
         """
@@ -192,3 +192,27 @@ class ProductListingPage(BasePage):
         except Exception as e:
             self.logger.error(f"Error checking SKUs existence: {e}")
             return False
+    
+    def click_brand_checkbox_by_index(self, index: int) -> None:
+        """Clicks on a brand checkbox by index."""
+        locator = (By.XPATH, f"(//label[contains(@for, 'brand-m-')])[{index}]")
+        self.click(locator)
+        self.logger.info(f"Clicked brand checkbox at index: {index}")
+    
+    def click_sort_option(self, option_number: int) -> None:
+        """Clicks on sort option by number (1-7)."""
+        locator = (By.CSS_SELECTOR, f".item.i{option_number}")
+        self.click(locator)
+        self.logger.info(f"Clicked sort option: item i{option_number}")
+    
+    def click_sort_by_icon(self) -> None:
+        """Clicks on icon sort by."""
+        self.click(self._ICON_SORT_BY)
+
+    def click_cargo_filter(self) -> None:
+        """Clicks on cargo filter."""
+        self.click(self._CARGO_FILTER)
+
+    def click_free_shipment_option(self) -> None:
+        """Clicks on free shipment option."""
+        self.click(self._FREE_SHIPMENT_OPTION)

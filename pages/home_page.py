@@ -41,16 +41,12 @@ class HomePage(BasePage):
         Args:
             keyword: The keyword to search for
         """
-        self.wait.for_element_visible(self.SEARCH_BOX)
-        search_box = self.driver.find_element(*self.SEARCH_BOX)
-        search_box.clear()
-        search_box.send_keys(keyword)
+        self.type(self.SEARCH_BOX, keyword)
         self.logger.info(f"Entered search keyword: {keyword}")
     
     def click_search_button(self) -> None:
         """Clicks the search button on the home page."""
-        self.wait.for_element_clickable(self.SEARCH_BUTTON)
-        self.driver.find_element(*self.SEARCH_BUTTON).click()
+        self.click(self.SEARCH_BUTTON)
         self.logger.info("Clicked search button")
         self.wait.wait_for_page_load()
     

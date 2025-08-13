@@ -142,6 +142,7 @@ chromedriver.log
 *.swp
 *.swo
 *~
+.cursorrules
 
 # OS specific
 .DS_Store

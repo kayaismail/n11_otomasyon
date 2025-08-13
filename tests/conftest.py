@@ -39,8 +39,7 @@ def driver():
     # Performance preferences
     chrome_options.add_experimental_option("prefs", {
         "profile.default_content_setting_values.notifications": 2,
-        "profile.default_content_settings.popups": 0,
-        "profile.managed_default_content_settings.images": 2  # Disable images for faster loading
+        "profile.default_content_settings.popups": 0
     })
     
     # Create service and driver

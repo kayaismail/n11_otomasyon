@@ -1,579 +1,82 @@
-# Automation Project Rules – Python + Selenium + Pytest
-# Focus: POM, SOLID Principles, Maintainable & Scalable Code
+# QA Automation Project Rules (Rev. 2025-08-13)
 
-## 🎯 Core Principles
+## 1. Genel Mimari
+- Page Object Model (POM) kullanılacak.
+- Her sayfa tek bir Python sınıfı olacak; public metodlar iş akışını yönetecek, private metodlar teknik etkileşimleri yönetecek.
+- SOLID prensipleri gözetilecek. Kod tekrarından kaçınılacak (DRY).
 
-### SOLID Principles
-- **Single Responsibility**: Each function should do only 1 thing
-- **Open/Closed**: Code should be open for extension, closed for modification
-- **Liskov Substitution**: Derived classes should be substitutable for their base classes
-- **Interface Segregation**: Avoid unnecessary method signatures
-- **Dependency Inversion**: Dependencies should depend on abstractions
+## 2. BasePage Zorunlulukları
+BasePage sınıfı en az aşağıdaki metotlara sahip olmalı:
+- `click(locator, timeout=DEFAULT_TIMEOUT)`
+- `type(locator, value, timeout=DEFAULT_TIMEOUT, clear=True)`
+- `wait_visible(locator, timeout=DEFAULT_TIMEOUT)`
+- `wait_clickable(locator, timeout=DEFAULT_TIMEOUT)`
+- `find(locator)`
+- `find_all(locator)`
+- `click_nth(locator, index, timeout=DEFAULT_TIMEOUT)`
+- `js_click(locator)`
+- `scroll_into_view(locator)`
+- `screenshot_on_fail(file_name=None)`
 
-### POM (Page Object Model)
-- Separate page elements from test logic
-- Each page should contain its own functions
+Tüm testlerde element etkileşimleri bu metotlar üzerinden yapılacak.
 
-### DRY & KISS
-- **DRY**: Don't Repeat Yourself
-- **KISS**: Keep It Simple, Stupid
-- **Single Purpose Functions**: Functions should be clear and serve a single purpose
+## 3. Yasaklar
+- `time.sleep()` KESİNLİKLE yasak. Beklemeler yalnızca explicit wait ile yapılacak.
+- Test dosyaları içinde locator tanımı yasak.
+- Implicit wait kullanılmayacak (`driver.implicitly_wait(0)`).
+- Testlerde iş mantığı yazılmayacak; sadece Given/When/Then akışı olacak.
 
-## 📁 Project Structure Standards
+## 4. Locator Kuralları
+- Öncelik: `id` > `data-*` attribute > stabil `class` > anlamlı `title`/`aria-*` > href > text.
+- CSS selector mümkünse XPATH yerine tercih edilecek.
+- Indexli seçimlerde `nth-child` veya `click_nth` metodu kullanılacak.
+- Locator sabitleri page sınıflarında private (`_ELEMENT_NAME`) tutulacak.
 
-```
-project_root/
-├── pages/                       # Page Objects
-│   ├── __init__.py
-│   ├── base_page.py
-│   ├── home_page.py
-│   ├── search_result_page.py
-│   ├── login_page.py
-│   └── cart_page.py
-├── tests/                       # Test Cases
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_homepage.py
-│   ├── test_search.py
-│   ├── test_login.py
-│   └── test_cart.py
-├── utils/                       # Utilities & Helpers
-│   ├── __init__.py
-│   ├── wait_helper.py
-│   ├── data_helper.py
-│   └── config_helper.py
-├── drivers/                     # WebDriver setup
-│   ├── __init__.py
-│   └── driver_factory.py
-├── .env                         # Environment variables
-├── pytest.ini                   # Pytest config
-├── requirements.txt
-└── README.md
-```
+## 5. Test Organizasyonu
+- Tüm testler `tests/` klasöründe olacak.
+- Test fonksiyon isimleri `test_` ile başlayacak.
+- Fixture isimleri açık ve net olacak (`driver`, `home_page`, `login_page` vb.).
+- `pytest.ini` içinde kullanılan tüm marker’lar tanımlı olacak (örn: `smoke`, `regression`, `slow`).
 
-## 📝 Coding Standards
+## 6. Parametrizasyon
+- Aynı akış farklı verilerle çalıştırılacaksa `@pytest.mark.parametrize` kullanılacak.
+- Test verileri `.env`, fixture veya harici data dosyalarından yüklenecek.
 
-### 1. Function Design
-- Function names should start with verbs (click_, enter_, get_, select_)
-- Each function should do only 1 thing
-- Function docstring format:
+## 7. Logging ve Raporlama
+- Her public action INFO seviyesinde loglanacak.
+- Hata durumunda ERROR log + otomatik ekran görüntüsü alınacak.
+- HTML rapor için `pytest-html`, opsiyonel olarak Allure desteği sağlanacak.
+- CI/CD ortamında rapor çıktıları `reports/` klasörüne kaydedilecek.
 
+## 8. Retry ve Flaky Önlemleri
+- `pytest-rerunfailures` eklenecek.
+- StaleElementReferenceException ve benzeri durumlar için BasePage metotlarında en az 1 retry yapılacak.
+
+## 9. Docstring ve Typing
+- Tüm public metotlar Google veya NumPy stili docstring ile açıklanacak.
+- Tip ipuçları (type hints) zorunlu.
+- Fonksiyon satır sayısı mümkünse 30’u aşmayacak.
+
+## 10. Git & Ortam Kuralları
+- `__pycache__/`, `.pytest_cache/`, `reports/`, `screenshots/`, `.env` `.gitignore` içinde olacak.
+- `requirements.txt` versiyon numaraları sabitlenecek.
+- `README.md` kurulum, çalıştırma ve rapor alma adımlarını içerecek.
+
+## 11. Kod Yazma Kuralları
+- **SADECE** kullanıcının istediği spesifik fonksiyonu yaz.
+- Kullanıcı tek bir fonksiyon istiyorsa, başka fonksiyonlar ekleme.
+- "Helper" veya "yardımcı" metodlar ekleme, sadece isteneni yap.
+- Gereksiz fonksiyon yazma, kullanıcıyı yorma.
+- Kullanıcı açıkça istemediği sürece ek metodlar yazma.
+
+## 12. Örnek Given/When/Then Yapısı
 ```python
-def click_filter(self, index: int) -> None:
-    """
-    Clicks the filter at the specified index.
-
-    Args:
-        index: Index of the filter element to click
-    """
-    self.click_element_by_index(self.FILTERS, index)
-    time.sleep(1)
-```
-
-### 2. Page Object Model Rules
-- Each page should be a single class
-- Locators should be defined as private (_locator_name) within the class
-- Public methods should only contain business logic
-- BasePage should contain common functions for all pages (click, send_keys, wait_for, etc.)
-
-Example:
-```python
-from selenium.webdriver.common.by import By
-from utils.wait_helper import WaitHelper
-
-class HomePage:
-    _SEARCH_BOX = (By.ID, "searchData")
-    _SEARCH_BUTTON = (By.CLASS_NAME, "searchBtn")
-    
-    def __init__(self, driver):
-        self.driver = driver
-        self.wait = WaitHelper(driver)
-
-    def enter_search_keyword(self, keyword: str) -> None:
-        """
-        Enters search keyword in the search box.
-        
-        Args:
-            keyword: The keyword to search for
-        """
-        self.wait.for_element_visible(self._SEARCH_BOX)
-        self.driver.find_element(*self._SEARCH_BOX).send_keys(keyword)
-
-    def click_search_button(self) -> None:
-        """
-        Clicks the search button on the home page.
-        """
-        self.wait.for_element_clickable(self._SEARCH_BUTTON)
-        self.driver.find_element(*self._SEARCH_BUTTON).click()
-```
-
-### 3. Error Handling
-- Use try/except for non-critical operations
-- Log errors and take screenshots in error cases
-- Provide clear error messages when tests fail
-
-### 4. Wait Strategies
-- Never use time.sleep() unless absolutely necessary
-- All explicit wait methods should be in WaitHelper:
-
-```python
-def for_element_clickable(self, locator: tuple, timeout: int = 10) -> None:
-    """
-    Waits for the element to be clickable.
-
-    Args:
-        locator: Tuple(By, value)
-        timeout: Timeout in seconds
-    """
-    WebDriverWait(self.driver, timeout).until(
-        EC.element_to_be_clickable(locator)
-    )
-```
-
-### 5. Data Management
-- Use .env for configuration management
-- Test data should be kept in separate JSON/CSV files or data helper classes
-
-## 🚫 Anti-Patterns to Avoid
-- Large functions (>20 lines)
-- Hard-coded values
-- Defining locators inside test cases
-- Using Thread.sleep()
-
-## 🔍 Code Review Checklist
-- [ ] Are functions single responsibility?
-- [ ] Is POM structure followed?
-- [ ] Is code duplication avoided?
-- [ ] Are errors being logged?
-- [ ] Is wait strategy used correctly?
-
-## 📊 Performance Guidelines
-- Prioritize ID for locating elements
-- Avoid unnecessary element searches
-- Use smart waiting (explicit waits)
-
-## 🛠️ Development Guidelines
-
-### Import Standards
-```python
-# Standard library imports
-import time
-import logging
-from typing import Optional, List, Tuple
-
-# Third-party imports
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import pytest
-
-# Local imports
-from pages.base_page import BasePage
-from utils.wait_helper import WaitHelper
-```
-
-### Class Structure
-```python
-class ExamplePage(BasePage):
-    """Example page object with proper structure."""
-    
-    # Private locators
-    _EXAMPLE_BUTTON = (By.ID, "example-button")
-    _EXAMPLE_INPUT = (By.NAME, "example-input")
-    
-    def __init__(self, driver):
-        super().__init__(driver)
-        self.wait = WaitHelper(driver)
-    
-    def click_example_button(self) -> None:
-        """Clicks the example button."""
-        self.wait.for_element_clickable(self._EXAMPLE_BUTTON)
-        self.driver.find_element(*self._EXAMPLE_BUTTON).click()
-    
-    def enter_example_text(self, text: str) -> None:
-        """Enters text into the example input field."""
-        self.wait.for_element_visible(self._EXAMPLE_INPUT)
-        self.driver.find_element(*self._EXAMPLE_INPUT).send_keys(text)
-```
-
-### Test Structure
-```python
-import pytest
-from pages.home_page import HomePage
-from pages.search_result_page import SearchResultPage
-
-class TestSearch:
-    """Search functionality test class."""
-    
-    @pytest.mark.smoke
-    def test_basic_search(self, driver):
-        """Tests basic search functionality."""
-        # Arrange
-        home_page = HomePage(driver)
-        search_page = SearchResultPage(driver)
-        
-        # Act
-        home_page.enter_search_keyword("phone")
-        home_page.click_search_button()
-        
-        # Assert
-        assert search_page.is_results_visible()
-        assert search_page.get_result_count() > 0
-    
-    @pytest.mark.parametrize("keyword,expected_count", [
-        ("phone", 10),
-        ("laptop", 8),
-        ("book", 15)
-    ])
-    def test_search_different_keywords(self, driver, keyword, expected_count):
-        """Tests search with different keywords."""
-        # Arrange
-        home_page = HomePage(driver)
-        search_page = SearchResultPage(driver)
-        
-        # Act
-        home_page.enter_search_keyword(keyword)
-        home_page.click_search_button()
-        
-        # Assert
-        actual_count = search_page.get_result_count()
-        assert actual_count >= expected_count
-```
-
-## 🔧 Configuration Standards
-
-### pytest.ini
-```ini
-[tool:pytest]
-testpaths = tests
-python_files = test_*.py
-python_classes = Test*
-python_functions = test_*
-addopts = 
-    -v
-    --tb=short
-    --strict-markers
-    --disable-warnings
-    --html=reports/report.html
-    --self-contained-html
-markers =
-    smoke: smoke tests
-    regression: regression tests
-    slow: slow running tests
-```
-
-### requirements.txt
-```
-selenium>=4.15.0
-pytest>=7.4.0
-pytest-html>=3.2.0
-pytest-xdist>=3.3.0
-webdriver-manager>=4.0.0
-python-dotenv>=1.0.0
-```
-
-### conftest.py
-```python
-import pytest
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-
-@pytest.fixture(scope="function")
-def driver():
-    """WebDriver fixture."""
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service)
-    driver.maximize_window()
-    yield driver
-    driver.quit()
-
-@pytest.fixture
-def home_page(driver):
-    """HomePage fixture."""
-    return HomePage(driver)
-```
-
-## 📋 Naming Conventions
-
-### Files
-- Page objects: `snake_case_page.py`
-- Test files: `test_snake_case.py`
-- Utility files: `snake_case_helper.py`
-
-### Classes
-- Page objects: `PascalCasePage`
-- Test classes: `TestPascalCase`
-- Helper classes: `PascalCaseHelper`
-
-### Methods
-- Action methods: `verb_noun()` (click_button, enter_text)
-- Getter methods: `get_noun()` (get_title, get_price)
-- Checker methods: `is_noun()` (is_visible, is_enabled)
-
-### Variables
-- Constants: `UPPER_SNAKE_CASE`
-- Private variables: `_lower_snake_case`
-- Public variables: `lower_snake_case`
-
-## 🎯 Test Execution Commands
-
-```bash
-# Run all tests
-pytest
-
-# Run only smoke tests
-pytest -m smoke
-
-# Run specific test file
-pytest tests/test_search.py
-
-# Run with verbose output
-pytest -v
-
-# Generate HTML report
-pytest --html=reports/report.html
-
-# Run tests in parallel
-pytest -n auto
-
-# Run tests with specific browser
-pytest --browser=chrome
-```
-
-## 🔍 Test Organization
-
-### Test Categories
-- **Smoke Tests**: Critical functionality tests
-- **Regression Tests**: Comprehensive functionality tests
-- **Slow Tests**: Time-consuming tests
-
-### Test Data Management
-- Use fixtures for test data
-- Keep test data in separate files
-- Use parametrize for data-driven tests
-
-### Assertions
-- Use descriptive assertion messages
-- Group related assertions
-- Use appropriate assertion methods
-
-## 1. 🛠️ Çevre Kurulumu (Environment Setup)
-
-### Test Otomasyon Çerçevesi Seçimi:
-- **Pytest** (zaten seçtik)
-- **Selenium WebDriver**
-- **Page Object Model (POM)**
-
-### Gerekli Araçlar:
-```bash
-# Virtual environment oluştur
-python -m venv n11_automation_env
-
-# Environment aktif et
-source n11_automation_env/bin/activate  # Mac/Linux
-# n11_automation_env\Scripts\activate  # Windows
-
-# Gerekli paketleri yükle
-pip install -r requirements.txt
-```
-
-### requirements.txt içeriği:
-```txt
-selenium>=4.15.0
-pytest>=7.4.0
-pytest-html>=3.2.0
-pytest-xdist>=3.3.0
-webdriver-manager>=4.0.0
-python-dotenv>=1.0.0
-```
-
-## 2.  Raporlama ve Entegrasyon
-
-### Test Raporlama Mekanizması:
-```ini
-# pytest.ini
-[tool:pytest]
-addopts = 
-    --html=reports/report.html
-    --self-contained-html
-    --json=reports/report.json
-```
-
-### HTML Rapor Örneği:
-```python
-# conftest.py
-import pytest
-from datetime import datetime
-
-@pytest.hookimpl(tryfirst=True)
-def pytest_configure(config):
-    """Configure custom markers."""
-    config.addinivalue_line(
-        "markers", "smoke: smoke tests"
-    )
-    config.addinivalue_line(
-        "markers", "regression: regression tests"
-    )
-
-def pytest_html_report_title(report):
-    """Customize HTML report title."""
-    report.title = "N11 Automation Test Report"
-
-def pytest_html_results_summary(prefix, summary, postfix):
-    """Add custom summary to HTML report."""
-    prefix.extend([
-        f"<p><strong>Test Date:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>",
-        f"<p><strong>Project:</strong> N11 E-commerce Automation</p>"
-    ])
-```
-
-### Git Versiyonlama:
-```bash
-# Git repository başlat
-git init
-
-# .gitignore dosyası oluştur
-echo "*.pyc
-__pycache__/
-.env
-reports/
-screenshots/
-*.log
-.DS_Store" > .gitignore
-
-# İlk commit
-git add .
-git commit -m "Initial commit: N11 automation project setup"
-```
-
-## 3. 📝 README.md Dosyası
-
-```markdown
-# N11 E-commerce Automation Project
-
-## 🎯 Project Overview
-This project contains automated tests for N11 e-commerce website using Python, Selenium, and Pytest.
-
-## ️ Project Structure
-```
-n11_automation/
-├── pages/                       # Page Objects
-│   ├── __init__.py
-│   ├── base_page.py
-│   ├── home_page.py
-│   ├── search_result_page.py
-│   ├── login_page.py
-│   └── cart_page.py
-├── tests/                       # Test Cases
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_homepage.py
-│   ├── test_search.py
-│   ├── test_login.py
-│   └── test_cart.py
-├── utils/                       # Utilities & Helpers
-│   ├── __init__.py
-│   ├── wait_helper.py
-│   ├── data_helper.py
-│   └── config_helper.py
-├── drivers/                     # WebDriver setup
-│   ├── __init__.py
-│   └── driver_factory.py
-├── reports/                     # Test Reports
-├── screenshots/                 # Screenshots on failure
-├── .env                         # Environment variables
-├── pytest.ini                   # Pytest config
-├── requirements.txt
-└── README.md
-```
-
-##  Setup Instructions
-
-### Prerequisites
-- Python 3.8+
-- Chrome Browser
-- Git
-
-### Installation
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd n11_automation
-```
-
-2. Create virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # Mac/Linux
-# venv\Scripts\activate  # Windows
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-##  Running Tests
-
-### Run all tests:
-```bash
-pytest
-```
-
-### Run smoke tests only:
-```bash
-pytest -m smoke
-```
-
-### Run specific test file:
-```bash
-pytest tests/test_search.py
-```
-
-### Generate HTML report:
-```bash
-pytest --html=reports/report.html
-```
-
-## 📊 Test Reports
-- HTML reports are generated in `reports/` directory
-- Screenshots are saved in `screenshots/` directory on test failures
-- JSON reports are available for CI/CD integration
-
-## ️ Test Categories
-- **Smoke Tests**: Critical functionality tests
-- **Regression Tests**: Comprehensive functionality tests
-- **Slow Tests**: Time-consuming tests
-
-## 🔧 Configuration
-- Environment variables are managed in `.env` file
-- Pytest configuration is in `pytest.ini`
-- WebDriver setup is in `conftest.py`
-
-## 📝 Contributing
-1. Follow the coding standards defined in `.cursorrules`
-2. Write tests using Page Object Model
-3. Use appropriate test markers
-4. Update documentation when needed
-
-## 📞 Support
-For questions or issues, please contact the automation team.
-```
-
-## 4. 🎯 Özet
-
-Bu maddeler şunları istiyor:
-
-### Çevre Kurulumu:
-- **Test framework kurulumu** (Pytest + Selenium)
-- **Gerekli araçların yüklenmesi** (WebDriver, plugins)
-- **Virtual environment oluşturma**
-
-### Raporlama ve Entegrasyon:
-- **HTML/JSON raporları** oluşturma
-- **Git repository** kurulumu
-- **README.md** ile proje dokümantasyonu
-- **CI/CD entegrasyonu** için hazırlık
-
-Bu adımları tamamladığınızda, profesyonel bir test otomasyon projesi elde edeceksiniz!
+def test_example(driver, home_page):
+    # Given
+    home_page.open()
+
+    # When
+    home_page.search("sesa")
+
+    # Then
+    assert home_page.is_search_result_correct("sesa")
