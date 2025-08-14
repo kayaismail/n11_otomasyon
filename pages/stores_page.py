@@ -25,7 +25,7 @@ class StoresPage(BasePage):
         self.check()
 
     def check(self):
-        """Check if page is loaded correctly."""
+        """Check if stores page is loaded correctly by verifying letters container visibility."""
         try:
             WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.LETTERS_CONTAINER))
             self.logger.info("Letters container is visible")
@@ -97,10 +97,13 @@ class StoresPage(BasePage):
 
     def get_random_store_name(self, index: int) -> str:
         """
-        Gets a random store name.
+        Gets store name by index.
         
+        Args:
+            index: Store index (1-based)
+            
         Returns:
-            Random store name
+            Store name at the specified index
         """
         store_link_locator = (By.CSS_SELECTOR, "div.tabPanel.allSellers > div.sellerListHolder > ul > li:nth-child({}) a".format(index))
         store_name = self.driver.find_element(*store_link_locator).text.lower()

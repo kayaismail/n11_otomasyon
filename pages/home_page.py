@@ -14,7 +14,6 @@ class HomePage(BasePage):
     # Private locators
     SEARCH_BOX = (By.ID, "searchData")
     SEARCH_BUTTON = (By.CLASS_NAME, "searchBtn")
-    LOGO = (By.CLASS_NAME, "logo")
     
     HOME_URL = "https://www.n11.com"
 
@@ -28,7 +27,7 @@ class HomePage(BasePage):
     def check(self):
         """Check if page is loaded correctly."""
         try:
-            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.LOGO))
+            WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self.SEARCH_BOX))
             self.logger.info("Home page loaded successfully")
         except TimeoutException:
             self.logger.error("Timeout: Home page not loaded after 10 seconds")

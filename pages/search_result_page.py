@@ -1,12 +1,14 @@
 """
 N11 Product Listing Page Object Model.
 """
-from selenium.webdriver.common.by import By
-from pages.base_page import BasePage
 import logging
+import time
+import re
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from pages.base_page import BasePage
 
 
 class SearchResultPage(BasePage):
@@ -48,7 +50,7 @@ class SearchResultPage(BasePage):
         self.check()
 
     def check(self):
-        """Check if product listing page is loaded correctly."""
+        """Check if search result page is loaded correctly by verifying add to cart button visibility."""
         try:
             WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(self._ADD_TO_CART_BUTTON))
             self.logger.info("Add to cart button is visible")
@@ -62,9 +64,9 @@ class SearchResultPage(BasePage):
             WebDriverWait(self.driver, 10).until(
                 lambda driver: 'arama?s=' in driver.current_url
             )
-            logging.info("Store page loaded successfully - URL contains 'arama?s='")
+            self.logger.info("Store page loaded successfully - URL contains 'arama?s='")
         except TimeoutException:
-            logging.error("Timeout: URL does not contain 'arama?s=' after 10 seconds")
+            self.logger.error("Timeout: URL does not contain 'arama?s=' after 10 seconds")
             raise
     
     def verify_result_view_element(self):
@@ -82,24 +84,24 @@ class SearchResultPage(BasePage):
             result_view_element = self.driver.find_element(*self.RESULT_VIEW)
             
             if result_view_element.is_displayed():
-                logging.info(".resultView element is present and visible")
+                self.logger.info(".resultView element is present and visible")
                 return True
             else:
-                logging.warning(".resultView element found but not visible")
+                self.logger.warning(".resultView element found but not visible")
                 return False
                 
         except Exception as e:
-            logging.error(".resultView element not found or not visible: {}".format(e))
+            self.logger.error(".resultView element not found or not visible: {}".format(e))
             
             # Log current URL for debugging
             current_url = self.driver.current_url
-            logging.info("Current URL: {}".format(current_url))
+            self.logger.info("Current URL: {}".format(current_url))
             
             # Try to find alternative elements
             try:
                 search_results = self.driver.find_element(*self.SEARCH_RESULTS)
                 if search_results.is_displayed():
-                    logging.info("Alternative element .searchResults found and visible")
+                    self.logger.info("Alternative element .searchResults found and visible")
                     return True
             except:
                 pass
@@ -132,7 +134,12 @@ class SearchResultPage(BasePage):
 
     # Özel metodlar - Açıklayıcı ve güvenli
     def click_skus_item(self, index: int = 1) -> None:
-        """Clicks on SKUS item by index."""
+        """
+        Clicks on SKU variant item by index.
+        
+        Args:
+            index: Index of SKU item to click (1-based, default: 1)
+        """
         self._click_element_by_index(self._SKUS_ITEM, index, "SKUS item")
     
     def click_add_to_cart_button(self, index: int = 1) -> None:
@@ -157,15 +164,10 @@ class SearchResultPage(BasePage):
             # Element'i görünür hale getir
             self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", target_element)
             
-            # Kısa bekleme
-            import time
-            time.sleep(1)
+            # Element'in hazır olması için küçük bekleme
+            self.wait.wait_for_page_load(timeout=2)
             
             # Element'in tıklanabilir olmasını bekle
-            from selenium.webdriver.support import expected_conditions as EC
-            from selenium.webdriver.support.ui import WebDriverWait
-            
-            # Element'in kendisinin tıklanabilir olmasını bekle
             WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(target_element))
             
             # Tıkla
@@ -193,9 +195,8 @@ class SearchResultPage(BasePage):
             # Element'i görünür hale getir (scroll)
             self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
             
-            # Kısa bir bekleme
-            import time
-            time.sleep(1)
+            # Element'in hazır olması için küçük bekleme  
+            self.wait.wait_for_page_load(timeout=2)
             
             # Element'in tıklanabilir olmasını bekle
             self.wait.for_element_clickable(locator, timeout=15)
@@ -251,7 +252,7 @@ class SearchResultPage(BasePage):
         return self.get_item_count(self._ADD_TO_CART_BUTTON, "add to cart button")
     
     def click_js_add_basket_sku(self) -> None:
-        """Clicks on JS add basket sku."""
+        """Clicks on the 'Add to Basket' button for SKU variants."""
         self._click_element(self._JS_ADD_BASKET_SKU, "JS add basket sku")
     
     def has_skus_items(self) -> bool:
@@ -271,42 +272,64 @@ class SearchResultPage(BasePage):
             return False
     
     def click_brand_checkbox_by_index(self, index: int) -> None:
-        """Clicks on a brand checkbox by index."""
+        """
+        Clicks on a brand filter checkbox by index.
+        
+        Args:
+            index: Index of brand checkbox to click (1-based)
+        """
         locator = (By.XPATH, f"(//label[contains(@for, 'brand-m-')])[{index}]")
         self.click(locator)
         self.logger.info(f"Clicked brand checkbox at index: {index}")
     
     def click_sort_option(self, option_number: int) -> None:
-        """Clicks on sort option by number (1-7)."""
+        """
+        Clicks on sort option by number.
+        
+        Args:
+            option_number: Sort option number (1-7, where 4 is comment count)
+        """
         locator = (By.CSS_SELECTOR, f".item.i{option_number}")
         self.click(locator)
         self.logger.info(f"Clicked sort option: item i{option_number}")
     
     def click_sort_by_icon(self) -> None:
-        """Clicks on icon sort by."""
+        """Clicks on sort by icon to open sort dropdown menu."""
         self.click(self._ICON_SORT_BY)
 
     def click_cargo_filter(self) -> None:
-        """Clicks on cargo filter."""
+        """Clicks on cargo filter to open shipping options."""
         self.click(self._CARGO_FILTER)
 
     def click_free_shipment_option(self) -> None:
-        """Clicks on free shipment option."""
+        """Clicks on free shipment option to filter products with free shipping."""
         self.click(self._FREE_SHIPMENT_OPTION)
     
     def click_basket_icon(self) -> None:
-        """Clicks on basket icon."""
+        """Clicks on basket icon to view shopping cart."""
         self.click(self._BASKET_ICON)
     
-    def get_prod_detail_count(self) -> None:
-        """Gets the number of prod detail elements."""
+    def get_prod_detail_count(self) -> int:
+        """
+        Gets the number of product detail elements.
+        
+        Returns:
+            Number of product detail elements found
+        """
         prod_detail_count = self.get_item_count(self._PROD_DETAIL, "prod detail")
         self.logger.info(f"Found {prod_detail_count} prod detail elements")
         return prod_detail_count
     
     def get_rating_text_by_index(self, index: int) -> str:
-        """Gets the rating text by index with only numbers extracted."""
-        import re
+        """
+        Gets the rating text by index with only numbers extracted.
+        
+        Args:
+            index: Index of rating element (1-based)
+            
+        Returns:
+            Rating text with only numeric characters
+        """
         try:
             rating_elements = self.driver.find_elements(*self._RATING_TEXT)
             if index < 1 or index > len(rating_elements):
@@ -356,7 +379,12 @@ class SearchResultPage(BasePage):
             return False
 
     def verify_cargo_badge_field_all_products(self) -> bool:
-        """Verifies that cargo badge field exists in all product imgHolder sections."""
+        """
+        Verifies that cargo badge field exists in all product imgHolder sections.
+        
+        Returns:
+            True if all products have cargo badge field, False otherwise
+        """
         try:
             # imgHolder elementlerini bul
             img_holder_elements = self.driver.find_elements(*self._IMG_HOLDER)

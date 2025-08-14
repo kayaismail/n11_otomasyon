@@ -71,7 +71,7 @@ pytest -m smoke
 
 ### Belirli bir test dosyası:
 ```bash
-pytest tests/test_stores.py
+pytest tests/test_filter_and_click_random_store_case.py
 ```
 
 ### Detaylı çıktı ile:
@@ -102,7 +102,7 @@ pytest
 pytest --html=reports/test_report.html --self-contained-html --css=reports/custom_style.css
 
 # Spesifik test çalıştırma
-pytest tests/test_phone_filter_sort.py -v
+pytest tests/test_phone_filter_sort_case.py -v
 ```
 
 #### Test Tipine Göre Filtreleme
