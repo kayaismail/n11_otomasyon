@@ -263,6 +263,12 @@ class SearchResultPage(BasePage):
             True if SKU items exist, False otherwise
         """
         try:
+            # Sayfa tamamen yüklenene kadar bekle
+            self.wait.wait_for_page_load(timeout=5)
+            
+            # DOM'un sakinleşmesini bekle
+            self.wait.dom_idle(idle_ms=500, timeout=5)
+            
             skus_count = self.get_skus_items_count()
             has_skus = skus_count > 0
             self.logger.info(f"Product has SKUs: {has_skus} (count: {skus_count})")
